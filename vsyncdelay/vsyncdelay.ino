@@ -8,6 +8,9 @@
 #include <stdlib.h>
  
 #define VSYNC_OUT 13 // PORT B pin 5
+#define VSYNC_EN_ORIGINAL 6 // PORT B pin 5
+#define VSYNC_EN_DELAY 7 // PORT B pin 5
+#define LED_EXTRA 8 // PORT B pin 
 #define VSYNC_IN   2
 #define HSYNC_IN   3
 
@@ -15,6 +18,7 @@
 #define VGA_LINES 525
 
 volatile int h_count = 0;
+volatile int v_count = 0;
 volatile int h_offset_store = 8;
 volatile int h_offset = 8;
 
@@ -29,6 +33,7 @@ void vsync()
 	}
 	*/
 	h_count = 0;
+	v_count+=1;
 }
 
 void hsync()
@@ -48,11 +53,15 @@ void hsync()
 void setup() 
 {                
 	Serial.begin(115200);
+	pinMode(VSYNC_EN_ORIGINAL, OUTPUT);     
+	pinMode(VSYNC_EN_DELAY, OUTPUT);     
 	pinMode(VSYNC_OUT, OUTPUT);     
 	pinMode(VSYNC_IN, INPUT);     
 	pinMode(HSYNC_IN, INPUT);     
 	attachInterrupt (INT0, vsync, FALLING);  // attach interrupt handler
 	attachInterrupt (INT1, hsync, RISING);  // attach interrupt handler
+	digitalWrite(VSYNC_EN_ORIGINAL,HIGH);
+	digitalWrite(VSYNC_EN_DELAY,LOW);
 }
 
 // the loop routine runs over and over again forever:
@@ -66,6 +75,13 @@ void loop()
 			h_offset = new_delay;
 			h_offset_store = h_offset;
 			Serial.println("h: "+String(h_offset));
+			if ( h_offset == 0 ) {
+				digitalWrite(VSYNC_EN_ORIGINAL,HIGH);
+				digitalWrite(VSYNC_EN_DELAY,LOW);
+			} else {
+				digitalWrite(VSYNC_EN_ORIGINAL,LOW);
+				digitalWrite(VSYNC_EN_DELAY,HIGH);
+			}
 		}
 	}
 
